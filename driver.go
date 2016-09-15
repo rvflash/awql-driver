@@ -3,7 +3,6 @@ package awql
 import (
 	"database/sql"
 	"database/sql/driver"
-	"io"
 	"net/http"
 	"strings"
 )
