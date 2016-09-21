@@ -9,6 +9,7 @@ var (
 	ErrQueryBinding = errors.New("QueryError.BINDING_NOT_MATCH")
 	ErrNoNetwork    = errors.New("ConnectionError.NOT_FOUND")
 	ErrBadNetwork   = errors.New("ConnectionError.SERVICE_UNAVAILABLE")
+	ErrBadToken     = errors.New("ConnectionError.INVALID_ACCESS_TOKEN")
 )
 
 // In case of error, Google Adwords API provides more information in a XML response
@@ -25,22 +26,22 @@ var (
 // ApiError represents a Google Report Download Error.
 // Voluntary ignores trigger field.
 type ApiError struct {
-	Type  string `xml:"ApiError>type"`
-	Field string `xml:"ApiError>fieldPath"`
+	str string `xml:"ApiError>type"`
+	src string `xml:"ApiError>fieldPath"`
 }
 
-func NewApiError(s *string) error {
+func NewApiError(d []byte) error {
 	e := ApiError{}
-	err := xml.Unmarshal([]byte(s), &e)
+	err := xml.Unmarshal(d, &e)
 	if err != nil {
 		return err
 	}
-	switch e.Field {
+	switch e.src {
 	case "":
 		fallthrough
 	case "selector":
-		return errors.New(e.Type)
+		return errors.New(e.str)
 	default:
-		return errors.New(e.Type + " on " + e.Field)
+		return errors.New(e.str + " on " + e.src)
 	}
 }
