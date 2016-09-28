@@ -26,6 +26,13 @@ type AwqlConn struct {
 	opts           *AwqlOpts
 }
 
+// AwqlAuthConn built-in interface type represents the capacity
+// to authenticate with OAuth2 and retrieve an access token for the connection.
+type AwqlAuthConn interface {
+	Auth() error
+	WithAuth() bool
+}
+
 // Close marks this connection as no longer in use.
 func (c *AwqlConn) Close() error {
 	c.client = nil
@@ -43,40 +50,24 @@ func (c *AwqlConn) Prepare(q string) (driver.Stmt, error) {
 }
 
 // Auth returns an error if it can not download or parse the Google access token.
+// Auth implements AwqlAuthConn interface on an AwqlConn struct.
 func (c *AwqlConn) Auth() error {
-	if c.oAuth.clientId == "" || c.oAuth.clientSecret == "" || c.oAuth.refreshToken == "" {
+	if c.oAuth == nil || c.oAuth.Valid() {
+		return nil
+	}
+	if !c.oAuth.IsSet() {
 		return ErrBadToken
 	}
-	r, err := c.downloadToken()
+	d, err := c.downloadToken()
 	if err != nil {
 		return err
 	}
-	return c.retrieveToken(r)
-}
-
-// RefreshAuth returns an error if it can not refresh the access token.
-func (c *AwqlConn) RefreshAuth() error {
-	if c.oAuth.Valid() {
-		return nil
-	}
-	return c.Auth()
+	return c.retrieveToken(d)
 }
 
 // WithAuth returns true if the connection requires an authentification.
 func (c *AwqlConn) WithAuth() bool {
-	return (c.oAuth.accessToken != "")
-}
-
-// NewAuthByToken returns an AwqlAuth struct only based on the access token.
-func NewAuthByToken(tk string) (*AwqlAuth, error) {
-	if tk == "" {
-		return &AwqlAuth{}, io.EOF
-	}
-	return &AwqlAuth{
-		accessToken: tk,
-		tokenType:   "Bearer",
-		expiry:      time.Now().Add(tokenExpiryDuration),
-	}, nil
+	return c.oAuth.AccessToken != ""
 }
 
 // downloadToken calls Google Auth Api to retrieve an access token.
@@ -90,9 +81,9 @@ func (c *AwqlConn) downloadToken() (io.ReadCloser, error) {
 	rq, err := http.NewRequest(
 		"POST", tokenUrl,
 		strings.NewReader(url.Values{
-			"client_id":     {c.oAuth.clientId},
-			"client_secret": {c.oAuth.clientSecret},
-			"refresh_token": {c.oAuth.refreshToken},
+			"client_id":     {c.oAuth.ClientId},
+			"client_secret": {c.oAuth.ClientSecret},
+			"refresh_token": {c.oAuth.RefreshToken},
 			"grant_type":    {"refresh_token"},
 		}.Encode()),
 	)
@@ -139,34 +130,9 @@ func (c *AwqlConn) retrieveToken(d io.ReadCloser) error {
 	if tk.expiresInSec == 0 || tk.accessToken == "" {
 		return ErrBadToken
 	}
-	c.oAuth.accessToken = tk.accessToken
-	c.oAuth.tokenType = tk.tokenType
-	c.oAuth.expiry = time.Now().Add(time.Duration(tk.expiresInSec) * time.Second)
+	c.oAuth.AccessToken = tk.accessToken
+	c.oAuth.TokenType = tk.tokenType
+	c.oAuth.Expiry = time.Now().Add(time.Duration(tk.expiresInSec) * time.Second)
 
 	return nil
-}
-
-// AwqlAuth contains all information to retrieve an access token via OAuth Google.
-// It implements Stringer interface
-type AwqlAuth struct {
-	clientId,
-	clientSecret,
-	refreshToken,
-	accessToken,
-	tokenType string
-	expiry time.Time
-}
-
-// Valid returns in success is the access token is ok.
-// The delta in seconds is used to avoid delay expiration of the token.
-func (a *AwqlAuth) Valid() bool {
-	if a.expiry.IsZero() {
-		return false
-	}
-	return a.expiry.Add(-tokenExpiryDelta).Before(time.Now())
-}
-
-// String implements Stringer interface and returns a representation of the access token.
-func (a *AwqlAuth) String() string {
-	return a.tokenType + " " + a.accessToken
 }

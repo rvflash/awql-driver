@@ -93,7 +93,7 @@ func (s *AwqlStmt) bind(args []driver.Value) error {
 // download calls Adwords API and saves response in a file.
 func (s *AwqlStmt) download(name string) error {
 	rq, err := http.NewRequest(
-		"POST", apiUrl+s.conn.opts.version,
+		"POST", apiUrl+s.conn.opts.Version,
 		strings.NewReader(url.Values{"__rdquery": {s.query}, "__fmt": {apiFmt}}.Encode()),
 	)
 	if err != nil {
@@ -104,15 +104,15 @@ func (s *AwqlStmt) download(name string) error {
 	rq.Header.Add("Accept", "*/*")
 	rq.Header.Add("clientCustomerId", s.conn.adwordsID)
 	rq.Header.Add("developerToken", s.conn.developerToken)
-	rq.Header.Add("includeZeroImpressions", strconv.FormatBool(s.conn.opts.includeZeroImpressions))
-	rq.Header.Add("skipColumnHeader", strconv.FormatBool(s.conn.opts.skipColumnHeader))
-	rq.Header.Add("skipReportHeader", strconv.FormatBool(s.conn.opts.skipReportHeader))
-	rq.Header.Add("skipReportSummary", strconv.FormatBool(s.conn.opts.skipReportSummary))
-	rq.Header.Add("useRawEnumValues", strconv.FormatBool(s.conn.opts.useRawEnumValues))
+	rq.Header.Add("includeZeroImpressions", strconv.FormatBool(s.conn.opts.IncludeZeroImpressions))
+	rq.Header.Add("skipColumnHeader", strconv.FormatBool(s.conn.opts.SkipColumnHeader))
+	rq.Header.Add("skipReportHeader", strconv.FormatBool(s.conn.opts.SkipReportHeader))
+	rq.Header.Add("skipReportSummary", strconv.FormatBool(s.conn.opts.SkipReportSummary))
+	rq.Header.Add("useRawEnumValues", strconv.FormatBool(s.conn.opts.UseRawEnumValues))
 
 	// Uses access token to fetch report
 	if s.conn.WithAuth() {
-		if err := s.conn.RefreshAuth(); err != nil {
+		if err := s.conn.Auth(); err != nil {
 			return ErrBadToken
 		}
 		rq.Header.Add("Authorization", s.conn.oAuth.String())

@@ -5,12 +5,16 @@ import (
 	"database/sql/driver"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const apiVersion = "v201607"
 
 // AwqlDriver implements all methods to pretend as a sql database driver.
 type AwqlDriver struct{}
+
+// Enable testing by mocking *gitflow.Repo.
+var oauth2 = auth
 
 // init adds finally awql as sql database driver
 // @see https://github.com/golang/go/wiki/SQLDrivers
@@ -23,9 +27,25 @@ func init() {
 // @see AdwordsId[:ApiVersion]|DeveloperToken[|ClientId][|ClientSecret][|RefreshToken]
 // @example 123-456-7890:v201607|dEve1op3er7okeN|1234567890-c1i3n7iD.com|c1ien753cr37|1/R3Fr35h-70k3n
 func (d *AwqlDriver) Open(dsn string) (driver.Conn, error) {
-	if dsn == "" {
-		return nil, driver.ErrBadConn
+	conn, err := unmarshal(dsn)
+	if err != nil {
+		return nil, err
 	}
+	if err = oauth2(conn); err != nil {
+		return nil, err
+	}
+	return conn, nil
+}
+
+// auth applies the authentication process on an connection.
+// It enables testing by mocking Auth method.
+func auth(conn AwqlAuthConn) error {
+	return conn.Auth()
+}
+
+// parseDsn returns an pointer to an AwqlConn by parsing a DSN string.
+// It throws an error on fails to parse it.
+func unmarshal(dsn string) (*AwqlConn, error) {
 	var adwordsId = func(s string) string {
 		return strings.Split(s, ":")[0]
 	}
@@ -34,56 +54,124 @@ func (d *AwqlDriver) Open(dsn string) (driver.Conn, error) {
 		if len(d) == 2 {
 			return d[1]
 		}
-		return apiVersion
+		return ""
 	}
-	var err error
+	conn := &AwqlConn{}
+	if dsn == "" {
+		return conn, driver.ErrBadConn
+	}
 
 	parts := strings.Split(dsn, "|")
-	switch len(parts) {
-	case 2:
-		// @example 123-456-7890|dEve1op3er7okeN
-		return &AwqlConn{
-			client: http.DefaultClient, adwordsID: adwordsId(parts[0]),
-			developerToken: parts[1], opts: NewOpts(apiVersion(parts[0])),
-		}, nil
+	size := len(parts)
+	if size < 2 || size > 5 || size == 4 {
+		return conn, driver.ErrBadConn
+	}
+	// @example 123-456-7890|dEve1op3er7okeN
+	conn.client = http.DefaultClient
+	conn.adwordsID = adwordsId(parts[0])
+	if conn.adwordsID == "" {
+		return conn, ErrAdwordsID
+	}
+	conn.developerToken = parts[1]
+	if conn.developerToken == "" {
+		return conn, ErrDevToken
+	}
+	conn.opts = NewOpts(apiVersion(parts[0]))
+
+	var err error
+	switch size {
 	case 3:
 		// @example 123-456-7890|dEve1op3er7okeN|ya29.AcC3s57okeN
-		c := &AwqlConn{
-			client: http.DefaultClient, adwordsID: adwordsId(parts[0]),
-			developerToken: parts[1], opts: NewOpts(apiVersion(parts[0])),
-		}
-		c.oAuth, err = NewAuthByToken(parts[2])
-		if err != nil {
-			return nil, ErrBadToken
-		}
-		return c, nil
+		conn.oAuth, err = NewAuthByToken(parts[2])
 	case 5:
 		// @example 123-456-7890|dEve1op3er7okeN|1234567890-c1i3n7iD.apps.googleusercontent.com|c1ien753cr37|1/R3Fr35h-70k3n
-		c := &AwqlConn{
-			client: http.DefaultClient, adwordsID: adwordsId(parts[0]),
-			developerToken: parts[1], opts: NewOpts(apiVersion(parts[0])),
-			oAuth: &AwqlAuth{clientId: parts[2], clientSecret: parts[3], refreshToken: parts[4]},
-		}
-		if err = c.Auth(); err != nil {
-			return nil, ErrBadToken
-		}
-		return c, nil
-	default:
-		return nil, driver.ErrBadConn
+		conn.oAuth, err = NewAuthByClient(parts[2], parts[3], parts[4])
 	}
+	return conn, err
+}
+
+// AwqlToken contains the properties of the Google access token.
+type AwqlToken struct {
+	AccessToken,
+	TokenType string
+	Expiry time.Time
+}
+
+// AwqlAuthKeys represents the keys used to retrieve an access token.
+type AwqlAuthKeys struct {
+	ClientId,
+	ClientSecret,
+	RefreshToken string
+}
+
+// AwqlAuth contains all information to deal with an access token via OAuth Google.
+// It implements Stringer interface
+type AwqlAuth struct {
+	AwqlAuthKeys
+	AwqlToken
+}
+
+// IsSet returns true if the auth struct has keys to refresh access token.
+func (a *AwqlAuth) IsSet() bool {
+	return a.ClientId != ""
+}
+
+// String returns a representation of the access token.
+func (a *AwqlAuth) String() string {
+	return a.TokenType + " " + a.AccessToken
+}
+
+// Valid returns in success is the access token is ok.
+// The delta in seconds is used to avoid delay expiration of the token.
+func (a *AwqlAuth) Valid() bool {
+	if a.Expiry.IsZero() {
+		return false
+	}
+	return a.Expiry.Add(-tokenExpiryDelta).Before(time.Now())
+}
+
+// NewAuthByToken returns an AwqlAuth struct only based on the access token.
+func NewAuthByToken(tk string) (*AwqlAuth, error) {
+	if tk == "" {
+		return &AwqlAuth{}, ErrBadToken
+	}
+	return &AwqlAuth{
+		AwqlToken: AwqlToken{
+			AccessToken: tk,
+			TokenType:   "Bearer",
+			Expiry:      time.Now().Add(tokenExpiryDuration),
+		},
+	}, nil
+}
+
+// NewAuthByClient returns an AwqlAuth struct only based on the client keys.
+func NewAuthByClient(clientId, clientSecret, refreshToken string) (*AwqlAuth, error) {
+	if clientId == "" || clientSecret == "" || refreshToken == "" {
+		return &AwqlAuth{}, ErrBadToken
+	}
+	return &AwqlAuth{
+		AwqlAuthKeys: AwqlAuthKeys{
+			ClientId:     clientId,
+			ClientSecret: clientSecret,
+			RefreshToken: refreshToken,
+		},
+	}, nil
 }
 
 // AwqlOpts lists the available Adwords API properties.
 type AwqlOpts struct {
-	version string
-	skipReportHeader,
-	skipColumnHeader,
-	skipReportSummary,
-	includeZeroImpressions,
-	useRawEnumValues bool
+	Version string
+	SkipReportHeader,
+	SkipColumnHeader,
+	SkipReportSummary,
+	IncludeZeroImpressions,
+	UseRawEnumValues bool
 }
 
 // NewOpts returns a AwqlOpts with default options.
 func NewOpts(version string) *AwqlOpts {
-	return &AwqlOpts{version: version, skipReportHeader: true, skipReportSummary: true}
+	if version == "" {
+		version = apiVersion
+	}
+	return &AwqlOpts{Version: version, SkipReportHeader: true, SkipReportSummary: true}
 }
