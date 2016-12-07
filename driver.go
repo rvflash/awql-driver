@@ -8,15 +8,12 @@ import (
 	"time"
 )
 
-const apiVersion = "v201607"
+const apiVersion = "v201609"
 
 // AwqlDriver implements all methods to pretend as a sql database driver.
 type AwqlDriver struct{}
 
-// Enable testing by mocking *gitflow.Repo.
-var oauth2 = auth
-
-// init adds finally awql as sql database driver
+// init adds  awql as sql database driver
 // @see https://github.com/golang/go/wiki/SQLDrivers
 func init() {
 	sql.Register("awql", &AwqlDriver{})
@@ -31,16 +28,11 @@ func (d *AwqlDriver) Open(dsn string) (driver.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = oauth2(conn); err != nil {
-		return nil, err
+	if conn.oAuth != nil {
+		// An authentification is required to connect to Adwords API.
+		conn.authenticate()
 	}
 	return conn, nil
-}
-
-// auth applies the authentication process on an connection.
-// It enables testing by mocking Auth method.
-func auth(conn AwqlAuthConn) error {
-	return conn.Auth()
 }
 
 // parseDsn returns an pointer to an AwqlConn by parsing a DSN string.

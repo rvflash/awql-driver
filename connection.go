@@ -26,13 +26,6 @@ type AwqlConn struct {
 	opts           *AwqlOpts
 }
 
-// AwqlAuthConn built-in interface type represents the capacity
-// to authenticate with OAuth2 and retrieve an access token for the connection.
-type AwqlAuthConn interface {
-	Auth() error
-	WithAuth() bool
-}
-
 // Close marks this connection as no longer in use.
 func (c *AwqlConn) Close() error {
 	c.client = nil
@@ -46,16 +39,21 @@ func (c *AwqlConn) Begin() (driver.Tx, error) {
 
 // Prepare returns a prepared statement, bound to this connection.
 func (c *AwqlConn) Prepare(q string) (driver.Stmt, error) {
+	if q == "" {
+		// No query to prepare.
+		return nil, io.EOF
+	}
 	return &AwqlStmt{conn: c, query: q}, nil
 }
 
 // Auth returns an error if it can not download or parse the Google access token.
-// Auth implements AwqlAuthConn interface on an AwqlConn struct.
-func (c *AwqlConn) Auth() error {
+func (c *AwqlConn) authenticate() error {
 	if c.oAuth == nil || c.oAuth.Valid() {
+		// Authentification is not required or already validated.
 		return nil
 	}
 	if !c.oAuth.IsSet() {
+		// No client information to refresh the token.
 		return ErrBadToken
 	}
 	d, err := c.downloadToken()
@@ -63,11 +61,6 @@ func (c *AwqlConn) Auth() error {
 		return err
 	}
 	return c.retrieveToken(d)
-}
-
-// WithAuth returns true if the connection requires an authentification.
-func (c *AwqlConn) WithAuth() bool {
-	return c.oAuth.AccessToken != ""
 }
 
 // downloadToken calls Google Auth Api to retrieve an access token.
@@ -125,8 +118,10 @@ func (c *AwqlConn) retrieveToken(d io.ReadCloser) error {
 
 	err := json.NewDecoder(d).Decode(&tk)
 	if err != nil {
+		// Unable to parse the JSON response.
 		return ErrBadToken
 	}
+	// Invalid format of the token.
 	if tk.expiresInSec == 0 || tk.accessToken == "" {
 		return ErrBadToken
 	}

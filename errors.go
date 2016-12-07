@@ -48,7 +48,8 @@ func NewApiError(d []byte) error {
 	return errors.New(e.String())
 }
 
-// String implements Stringer interface and returns a representation of the api error.
+// String returns a representation of the api error.
+// It implements Stringer interface
 func (e *ApiError) String() string {
 	switch e.Field {
 	case "":

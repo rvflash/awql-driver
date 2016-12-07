@@ -111,8 +111,8 @@ func (s *AwqlStmt) download(name string) error {
 	rq.Header.Add("useRawEnumValues", strconv.FormatBool(s.conn.opts.UseRawEnumValues))
 
 	// Uses access token to fetch report
-	if s.conn.WithAuth() {
-		if err := s.conn.Auth(); err != nil {
+	if s.conn.oAuth != nil {
+		if err := s.conn.authenticate(); err != nil {
 			return ErrBadToken
 		}
 		rq.Header.Add("Authorization", s.conn.oAuth.String())
