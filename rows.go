@@ -5,19 +5,19 @@ import (
 	"io"
 )
 
-// AwqlRows is an iterator over an executed query's results.
-type AwqlRows struct {
+// Rows is an iterator over an executed query's results.
+type Rows struct {
 	Position, Size uint
 	Data           [][]string
 }
 
 // Close usual closes the rows iterator.
-func (r *AwqlRows) Close() error {
+func (r *Rows) Close() error {
 	return nil
 }
 
 // Columns returns the names of the columns.
-func (r *AwqlRows) Columns() []string {
+func (r *Rows) Columns() []string {
 	if r.Size == 0 {
 		return nil
 	}
@@ -25,7 +25,7 @@ func (r *AwqlRows) Columns() []string {
 }
 
 // Next is called to populate the next row of data into the provided slice.
-func (r *AwqlRows) Next(dest []driver.Value) error {
+func (r *Rows) Next(dest []driver.Value) error {
 	if r.Position == r.Size {
 		return io.EOF
 	}

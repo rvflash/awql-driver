@@ -11,46 +11,46 @@ import (
 )
 
 const (
-	tokenUrl            = "https:/accounts.google.com/o/oauth2/token"
+	tokenUrl            = "https://accounts.google.com/o/oauth2/token"
 	tokenTimeout        = time.Duration(4 * time.Second)
 	tokenExpiryDelta    = 10 * time.Second
 	tokenExpiryDuration = 60 * time.Minute
 )
 
-// AwqlConn represents a connection to a database and implements driver.Conn.
-type AwqlConn struct {
+// Conn represents a connection to a database and implements driver.Conn.
+type Conn struct {
 	client         *http.Client
 	adwordsID      string
 	developerToken string
-	oAuth          *AwqlAuth
-	opts           *AwqlOpts
+	oAuth          *Auth
+	opts           *Opts
 }
 
 // Close marks this connection as no longer in use.
-func (c *AwqlConn) Close() error {
+func (c *Conn) Close() error {
 	// Resets client
 	c.client = nil
 	return nil
 }
 
 // Begin is dedicated to start a transaction and awql does not support it.
-func (c *AwqlConn) Begin() (driver.Tx, error) {
+func (c *Conn) Begin() (driver.Tx, error) {
 	return nil, driver.ErrSkip
 }
 
 // Prepare returns a prepared statement, bound to this connection.
-func (c *AwqlConn) Prepare(q string) (driver.Stmt, error) {
+func (c *Conn) Prepare(q string) (driver.Stmt, error) {
 	if q == "" {
 		// No query to prepare.
 		return nil, io.EOF
 	}
-	return &AwqlStmt{conn: c, query: q}, nil
+	return &Stmt{conn: c, query: q}, nil
 }
 
 // Auth returns an error if it can not download or parse the Google access token.
-func (c *AwqlConn) authenticate() error {
+func (c *Conn) authenticate() error {
 	if c.oAuth == nil || c.oAuth.Valid() {
-		// Authentification is not required or already validated.
+		// Authentication is not required or already validated.
 		return nil
 	}
 	if !c.oAuth.IsSet() {
@@ -71,7 +71,7 @@ func (c *AwqlConn) authenticate() error {
 //     "token_type": "Bearer",
 //     "expires_in": 60
 // }
-func (c *AwqlConn) downloadToken() (io.ReadCloser, error) {
+func (c *Conn) downloadToken() (io.ReadCloser, error) {
 	rq, err := http.NewRequest(
 		"POST", tokenUrl,
 		strings.NewReader(url.Values{
@@ -92,7 +92,6 @@ func (c *AwqlConn) downloadToken() (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	// Manages response in error
 	if resp.StatusCode != http.StatusOK {
 		switch resp.StatusCode {
@@ -107,13 +106,13 @@ func (c *AwqlConn) downloadToken() (io.ReadCloser, error) {
 	return resp.Body, nil
 }
 
-// retrieveToken parses the JSON response in order to map it to a AwqlToken.
+// retrieveToken parses the JSON response in order to map it to a AuthToken.
 // An error occurs if the JSON is invalid.
-func (c *AwqlConn) retrieveToken(d io.ReadCloser) error {
+func (c *Conn) retrieveToken(d io.ReadCloser) error {
 	var tk struct {
-		accessToken  string `json:"access_token"`
-		expiresInSec int    `json:"expires_in"`
-		tokenType    string `json:"token_type"`
+		AccessToken  string `json:"access_token"`
+		ExpiresInSec int    `json:"expires_in"`
+		TokenType    string `json:"token_type"`
 	}
 	defer d.Close()
 
@@ -122,13 +121,13 @@ func (c *AwqlConn) retrieveToken(d io.ReadCloser) error {
 		// Unable to parse the JSON response.
 		return ErrBadToken
 	}
-	// Invalid format of the token.
-	if tk.expiresInSec == 0 || tk.accessToken == "" {
+	if tk.ExpiresInSec == 0 || tk.AccessToken == "" {
+		// Invalid format of the token.
 		return ErrBadToken
 	}
-	c.oAuth.AccessToken = tk.accessToken
-	c.oAuth.TokenType = tk.tokenType
-	c.oAuth.Expiry = time.Now().Add(time.Duration(tk.expiresInSec) * time.Second)
+	c.oAuth.AccessToken = tk.AccessToken
+	c.oAuth.TokenType = tk.TokenType
+	c.oAuth.Expiry = time.Now().Add(time.Duration(tk.ExpiresInSec) * time.Second)
 
 	return nil
 }

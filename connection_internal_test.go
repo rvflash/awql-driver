@@ -8,15 +8,15 @@ import (
 )
 
 var connTests = []struct {
-	conn  *AwqlConn
+	conn  *Conn
 	query string
 	err   error
 }{
-	{&AwqlConn{client: http.DefaultClient}, "", io.EOF},
-	{&AwqlConn{client: http.DefaultClient}, "SELECT AccountDescriptiveName FROM ACCOUNT_PERFORMANCE_REPORT;", nil},
+	{&Conn{client: http.DefaultClient}, "", io.EOF},
+	{&Conn{client: http.DefaultClient}, "SELECT AccountDescriptiveName FROM ACCOUNT_PERFORMANCE_REPORT;", nil},
 }
 
-// TestAwqlConn_Close tests the method named Close on AwqlConn strict.
+// TestAwqlConn_Close tests the method named Close on Conn strict.
 func TestAwqlConn_Close(t *testing.T) {
 	for _, ct := range connTests {
 		if err := ct.conn.Close(); err != nil {
@@ -27,7 +27,7 @@ func TestAwqlConn_Close(t *testing.T) {
 	}
 }
 
-// TestAwqlConn_Begin tests the method named Begin on AwqlConn strict.
+// TestAwqlConn_Begin tests the method named Begin on Conn strict.
 func TestAwqlConn_Begin(t *testing.T) {
 	for _, ct := range connTests {
 		if _, err := ct.conn.Begin(); err != driver.ErrSkip {
@@ -36,7 +36,7 @@ func TestAwqlConn_Begin(t *testing.T) {
 	}
 }
 
-// TestAwqlConn_Prepare tests the method named Prepare on AwqlConn strict.
+// TestAwqlConn_Prepare tests the method named Prepare on Conn strict.
 func TestAwqlConn_Prepare(t *testing.T) {
 	for _, ct := range connTests {
 		if _, err := ct.conn.Prepare(ct.query); err != ct.err {

@@ -1,22 +1,23 @@
 package awql
 
-// AwqlDsn represents a data source name.
-type AwqlDsn struct {
+// Dsn represents a data source name.
+type Dsn struct {
 	AdwordsId, ApiVersion,
-	DeveloperToken,
+	DeveloperToken, AccessToken,
 	ClientId, ClientSecret,
 	RefreshToken string
 }
 
-// NewDsn returns a new instance of AwqlDsn.
-func NewDsn(id string) *AwqlDsn {
-	return &AwqlDsn{AdwordsId: id}
+// NewDsn returns a new instance of Dsn.
+func NewDsn(id string) *Dsn {
+	return &Dsn{AdwordsId: id}
 }
 
 // String outputs the data source name as string.
 // It implements fmt.Stringer
+// @see AdwordsId[:ApiVersion]|DeveloperToken[|AccessToken]
 // @see AdwordsId[:ApiVersion]|DeveloperToken[|ClientId][|ClientSecret][|RefreshToken]
-func (d *AwqlDsn) String() (n string) {
+func (d *Dsn) String() (n string) {
 	if d.AdwordsId == "" {
 		return
 	}
@@ -26,6 +27,9 @@ func (d *AwqlDsn) String() (n string) {
 	}
 	if d.DeveloperToken != "" {
 		n += dsnSep + d.DeveloperToken
+	}
+	if d.AccessToken != "" {
+		n += dsnSep + d.AccessToken
 	}
 	if d.ClientId != "" {
 		n += dsnSep + d.ClientId

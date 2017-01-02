@@ -22,30 +22,30 @@ const (
 	apiTimeout = time.Duration(30 * time.Second)
 )
 
-// AwqlStmt is a prepared statement.
-type AwqlStmt struct {
-	conn  *AwqlConn
+// Stmt is a prepared statement.
+type Stmt struct {
+	conn  *Conn
 	query string
 }
 
 // Close closes the statement.
-func (s *AwqlStmt) Close() error {
+func (s *Stmt) Close() error {
 	return nil
 }
 
 // NumInput returns the number of placeholder parameters.
-func (s *AwqlStmt) NumInput() int {
+func (s *Stmt) NumInput() int {
 	return strings.Count(s.query, "?")
 }
 
 // Query sends request to Google Adwords API and retrieves its content.
-func (s *AwqlStmt) Query(args []driver.Value) (driver.Rows, error) {
+func (s *Stmt) Query(args []driver.Value) (driver.Rows, error) {
 	// Binds all the args on the query
 	if err := s.bind(args); err != nil {
 		return nil, err
 	}
 	// Saves response in a file named with the hash64 of the query.
-	f, err := s.filepath()
+	f, err := s.filePath()
 	if err != nil {
 		return nil, err
 	}
@@ -66,18 +66,18 @@ func (s *AwqlStmt) Query(args []driver.Value) (driver.Rows, error) {
 	}
 	if l := len(rs); l > 1 {
 		// Starts the index to 1 in order to ignore the column header.
-		return &AwqlRows{Size: uint(l), Data: rs, Position: 1}, nil
+		return &Rows{Size: uint(l), Data: rs, Position: 1}, nil
 	}
-	return &AwqlRows{}, nil
+	return &Rows{}, nil
 }
 
 // Exec executes a query that doesn't return rows, such as an INSERT or UPDATE.
-func (s *AwqlStmt) Exec(args []driver.Value) (driver.Result, error) {
+func (s *Stmt) Exec(args []driver.Value) (driver.Result, error) {
 	return nil, driver.ErrSkip
 }
 
 // bind applies the required argument replacements on the query.
-func (s *AwqlStmt) bind(args []driver.Value) error {
+func (s *Stmt) bind(args []driver.Value) error {
 	if len(args) != s.NumInput() {
 		return ErrQueryBinding
 	}
@@ -91,7 +91,7 @@ func (s *AwqlStmt) bind(args []driver.Value) error {
 }
 
 // download calls Adwords API and saves response in a file.
-func (s *AwqlStmt) download(name string) error {
+func (s *Stmt) download(name string) error {
 	rq, err := http.NewRequest(
 		"POST", apiUrl+s.conn.opts.Version,
 		strings.NewReader(url.Values{"__rdquery": {s.query}, "__fmt": {apiFmt}}.Encode()),
@@ -153,15 +153,15 @@ func (s *AwqlStmt) download(name string) error {
 	return nil
 }
 
-// filepath returns the filepath to save the response of the query.
+// filePath returns the file path to save the response of the query.
 // @example /tmp/awql16027257112758723916.csv
-func (s *AwqlStmt) filepath() (string, error) {
+func (s *Stmt) filePath() (string, error) {
 	h := fnv.New64()
 	if _, err := h.Write([]byte(s.query)); err != nil {
 		return "", err
 	}
 	// File name
 	f := []string{"awql", strconv.FormatUint(h.Sum64(), 10), ".", strings.ToLower(apiFmt)}
-	// With filepath
+	// Complete file path
 	return filepath.Join(os.TempDir(), strings.Join(f, "")), nil
 }
