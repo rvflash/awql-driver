@@ -7,8 +7,8 @@ import (
 
 // AwqlRows is an iterator over an executed query's results.
 type AwqlRows struct {
-	pos, size uint
-	data      [][]string
+	Position, Size uint
+	Data           [][]string
 }
 
 // Close usual closes the rows iterator.
@@ -18,18 +18,22 @@ func (r *AwqlRows) Close() error {
 
 // Columns returns the names of the columns.
 func (r *AwqlRows) Columns() []string {
-	return r.data[0]
+	if r.Size == 0 {
+		return nil
+	}
+	return r.Data[0]
 }
 
 // Next is called to populate the next row of data into the provided slice.
 func (r *AwqlRows) Next(dest []driver.Value) error {
-	if r.pos == r.size {
+	if r.Position == r.Size {
 		return io.EOF
 	}
-	for k, v := range r.data[r.pos] {
-		dest[k] = v
+	// Converts slice of string into slice of interface, expected value of sql driver.
+	for k, v := range r.Data[r.Position] {
+		dest[k] = driver.Value(v)
 	}
-	r.pos++
+	r.Position++
 
 	return nil
 }

@@ -53,7 +53,7 @@ func NewApiError(d []byte) error {
 func (e *ApiError) String() string {
 	switch e.Field {
 	case "":
-		if e.Trigger == "" {
+		if e.Trigger == "" || e.Trigger == "<null>" {
 			return e.Type
 		}
 		return e.Type + " (" + e.Trigger + ")"

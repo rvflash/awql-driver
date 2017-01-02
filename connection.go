@@ -14,7 +14,7 @@ const (
 	tokenUrl            = "https:/accounts.google.com/o/oauth2/token"
 	tokenTimeout        = time.Duration(4 * time.Second)
 	tokenExpiryDelta    = 10 * time.Second
-	tokenExpiryDuration = 60 * time.Second
+	tokenExpiryDuration = 60 * time.Minute
 )
 
 // AwqlConn represents a connection to a database and implements driver.Conn.
@@ -28,6 +28,7 @@ type AwqlConn struct {
 
 // Close marks this connection as no longer in use.
 func (c *AwqlConn) Close() error {
+	// Resets client
 	c.client = nil
 	return nil
 }

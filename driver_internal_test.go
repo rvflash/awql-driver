@@ -93,12 +93,12 @@ var authTests = []struct {
 			AwqlAuthKeys{},
 			AwqlToken{TokenType: "Bearer", AccessToken: "ya29.A", Expiry: time.Now()},
 		},
-		"Bearer ya29.A", true, false,
+		"Bearer ya29.A", false, false,
 	},
 	{
 		&AwqlAuth{
 			AwqlAuthKeys{},
-			AwqlToken{TokenType: "Bearer", AccessToken: "ya29.B", Expiry: time.Now().Add(60)},
+			AwqlToken{TokenType: "Bearer", AccessToken: "ya29.B", Expiry: time.Now().Add(tokenExpiryDuration)},
 		},
 		"Bearer ya29.B", true, false,
 	},
@@ -108,7 +108,7 @@ var authTests = []struct {
 				ClientId:     "1234567890-c1i3n7iD.apps.googleusercontent.com",
 				ClientSecret: "c1ien753cr37", RefreshToken: "1/R3Fr35h-70k3n",
 			},
-			AwqlToken{TokenType: "Bearer", AccessToken: "ya29.AcC3s57okeN", Expiry: time.Now().Add(60)},
+			AwqlToken{TokenType: "Bearer", AccessToken: "ya29.AcC3s57okeN", Expiry: time.Now().Add(tokenExpiryDuration)},
 		},
 		"Bearer ya29.AcC3s57okeN", true, true,
 	},

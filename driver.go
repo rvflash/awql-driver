@@ -8,7 +8,11 @@ import (
 	"time"
 )
 
-const apiVersion = "v201609"
+const (
+	apiVersion = "v201609"
+	dsnSep     = "|"
+	dsnOptSep  = ":"
+)
 
 // AwqlDriver implements all methods to pretend as a sql database driver.
 type AwqlDriver struct{}
@@ -39,10 +43,10 @@ func (d *AwqlDriver) Open(dsn string) (driver.Conn, error) {
 // It throws an error on fails to parse it.
 func unmarshal(dsn string) (*AwqlConn, error) {
 	var adwordsId = func(s string) string {
-		return strings.Split(s, ":")[0]
+		return strings.Split(s, dsnOptSep)[0]
 	}
 	var apiVersion = func(s string) string {
-		d := strings.Split(s, ":")
+		d := strings.Split(s, dsnOptSep)
 		if len(d) == 2 {
 			return d[1]
 		}
@@ -53,7 +57,7 @@ func unmarshal(dsn string) (*AwqlConn, error) {
 		return conn, driver.ErrBadConn
 	}
 
-	parts := strings.Split(dsn, "|")
+	parts := strings.Split(dsn, dsnSep)
 	size := len(parts)
 	if size < 2 || size > 5 || size == 4 {
 		return conn, driver.ErrBadConn
@@ -113,13 +117,13 @@ func (a *AwqlAuth) String() string {
 	return a.TokenType + " " + a.AccessToken
 }
 
-// Valid returns in success is the access token is ok.
+// Valid returns in success is the access token is not expired.
 // The delta in seconds is used to avoid delay expiration of the token.
 func (a *AwqlAuth) Valid() bool {
 	if a.Expiry.IsZero() {
 		return false
 	}
-	return a.Expiry.Add(-tokenExpiryDelta).Before(time.Now())
+	return !a.Expiry.Add(-tokenExpiryDelta).Before(time.Now())
 }
 
 // NewAuthByToken returns an AwqlAuth struct only based on the access token.

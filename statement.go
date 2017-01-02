@@ -60,13 +60,13 @@ func (s *AwqlStmt) Query(args []driver.Value) (driver.Rows, error) {
 	}
 	defer d.Close()
 
-	r := csv.NewReader(d)
-	rs, err := r.ReadAll()
+	rs, err := csv.NewReader(d).ReadAll()
 	if err != nil {
 		return nil, err
 	}
-	if l := (len(rs) - 1); l > 0 {
-		return &AwqlRows{size: uint(l), data: rs[1:], pos: 1}, nil
+	if l := len(rs); l > 1 {
+		// Starts the index to 1 in order to ignore the column header.
+		return &AwqlRows{Size: uint(l), Data: rs, Position: 1}, nil
 	}
 	return &AwqlRows{}, nil
 }
@@ -100,6 +100,8 @@ func (s *AwqlStmt) download(name string) error {
 		return err
 	}
 	s.conn.client.Timeout = apiTimeout
+
+	// @see https://developers.google.com/adwords/api/docs/guides/reporting#request_headers
 	rq.Header.Add("Content-Type", "application/x-www-form-urlencoded; param=value")
 	rq.Header.Add("Accept", "*/*")
 	rq.Header.Add("clientCustomerId", s.conn.adwordsID)
@@ -152,12 +154,14 @@ func (s *AwqlStmt) download(name string) error {
 }
 
 // filepath returns the filepath to save the response of the query.
+// @example /tmp/awql16027257112758723916.csv
 func (s *AwqlStmt) filepath() (string, error) {
 	h := fnv.New64()
 	if _, err := h.Write([]byte(s.query)); err != nil {
 		return "", err
 	}
-	return filepath.Join(
-		os.TempDir(), "awql", strconv.FormatUint(h.Sum64(), 10), ".", strings.ToLower(apiFmt),
-	), nil
+	// File name
+	f := []string{"awql", strconv.FormatUint(h.Sum64(), 10), ".", strings.ToLower(apiFmt)}
+	// With filepath
+	return filepath.Join(os.TempDir(), strings.Join(f, "")), nil
 }
