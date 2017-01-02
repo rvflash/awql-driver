@@ -24,8 +24,8 @@ const (
 
 // Stmt is a prepared statement.
 type Stmt struct {
-	conn  *Conn
-	query string
+	Db  *Conn
+	SrcQuery string
 }
 
 // Close closes the statement.
@@ -35,7 +35,7 @@ func (s *Stmt) Close() error {
 
 // NumInput returns the number of placeholder parameters.
 func (s *Stmt) NumInput() int {
-	return strings.Count(s.query, "?")
+	return strings.Count(s.SrcQuery, "?")
 }
 
 // Query sends request to Google Adwords API and retrieves its content.
@@ -81,11 +81,11 @@ func (s *Stmt) bind(args []driver.Value) error {
 	if len(args) != s.NumInput() {
 		return ErrQueryBinding
 	}
-	q := s.query
+	q := s.SrcQuery
 	for _, v := range args {
 		q = strings.Replace(q, "?", fmt.Sprintf("%q", v), 1)
 	}
-	s.query = q
+	s.SrcQuery = q
 
 	return nil
 }
@@ -93,35 +93,35 @@ func (s *Stmt) bind(args []driver.Value) error {
 // download calls Adwords API and saves response in a file.
 func (s *Stmt) download(name string) error {
 	rq, err := http.NewRequest(
-		"POST", apiUrl+s.conn.opts.Version,
-		strings.NewReader(url.Values{"__rdquery": {s.query}, "__fmt": {apiFmt}}.Encode()),
+		"POST", apiUrl+s.Db.opts.Version,
+		strings.NewReader(url.Values{"__rdquery": {s.SrcQuery}, "__fmt": {apiFmt}}.Encode()),
 	)
 	if err != nil {
 		return err
 	}
-	s.conn.client.Timeout = apiTimeout
+	s.Db.client.Timeout = apiTimeout
 
 	// @see https://developers.google.com/adwords/api/docs/guides/reporting#request_headers
 	rq.Header.Add("Content-Type", "application/x-www-form-urlencoded; param=value")
 	rq.Header.Add("Accept", "*/*")
-	rq.Header.Add("clientCustomerId", s.conn.adwordsID)
-	rq.Header.Add("developerToken", s.conn.developerToken)
-	rq.Header.Add("includeZeroImpressions", strconv.FormatBool(s.conn.opts.IncludeZeroImpressions))
-	rq.Header.Add("skipColumnHeader", strconv.FormatBool(s.conn.opts.SkipColumnHeader))
-	rq.Header.Add("skipReportHeader", strconv.FormatBool(s.conn.opts.SkipReportHeader))
-	rq.Header.Add("skipReportSummary", strconv.FormatBool(s.conn.opts.SkipReportSummary))
-	rq.Header.Add("useRawEnumValues", strconv.FormatBool(s.conn.opts.UseRawEnumValues))
+	rq.Header.Add("clientCustomerId", s.Db.adwordsID)
+	rq.Header.Add("developerToken", s.Db.developerToken)
+	rq.Header.Add("includeZeroImpressions", strconv.FormatBool(s.Db.opts.IncludeZeroImpressions))
+	rq.Header.Add("skipColumnHeader", strconv.FormatBool(s.Db.opts.SkipColumnHeader))
+	rq.Header.Add("skipReportHeader", strconv.FormatBool(s.Db.opts.SkipReportHeader))
+	rq.Header.Add("skipReportSummary", strconv.FormatBool(s.Db.opts.SkipReportSummary))
+	rq.Header.Add("useRawEnumValues", strconv.FormatBool(s.Db.opts.UseRawEnumValues))
 
 	// Uses access token to fetch report
-	if s.conn.oAuth != nil {
-		if err := s.conn.authenticate(); err != nil {
+	if s.Db.oAuth != nil {
+		if err := s.Db.authenticate(); err != nil {
 			return ErrBadToken
 		}
-		rq.Header.Add("Authorization", s.conn.oAuth.String())
+		rq.Header.Add("Authorization", s.Db.oAuth.String())
 	}
 
 	// Downloads the report
-	resp, err := s.conn.client.Do(rq)
+	resp, err := s.Db.client.Do(rq)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func (s *Stmt) download(name string) error {
 // @example /tmp/awql16027257112758723916.csv
 func (s *Stmt) filePath() (string, error) {
 	h := fnv.New64()
-	if _, err := h.Write([]byte(s.query)); err != nil {
+	if _, err := h.Write([]byte(s.SrcQuery)); err != nil {
 		return "", err
 	}
 	// File name

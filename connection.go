@@ -44,7 +44,7 @@ func (c *Conn) Prepare(q string) (driver.Stmt, error) {
 		// No query to prepare.
 		return nil, io.EOF
 	}
-	return &Stmt{conn: c, query: q}, nil
+	return &Stmt{Db: c, SrcQuery: q}, nil
 }
 
 // Auth returns an error if it can not download or parse the Google access token.
