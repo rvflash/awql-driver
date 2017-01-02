@@ -33,7 +33,7 @@ func (d *Driver) Open(dsn string) (driver.Conn, error) {
 		return nil, err
 	}
 	if conn.oAuth != nil {
-		// An authentification is required to connect to Adwords API.
+		// An authentication is required to connect to Adwords API.
 		conn.authenticate()
 	}
 	return conn, nil
