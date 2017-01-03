@@ -41,7 +41,7 @@ func (s *Stmt) NumInput() int {
 // Query sends request to Google Adwords API and retrieves its content.
 func (s *Stmt) Query(args []driver.Value) (driver.Rows, error) {
 	// Binds all the args on the query
-	if err := s.bind(args); err != nil {
+	if err := s.Bind(args); err != nil {
 		return nil, err
 	}
 	// Saves response in a file named with the hash64 of the query.
@@ -76,14 +76,30 @@ func (s *Stmt) Exec(args []driver.Value) (driver.Result, error) {
 	return nil, driver.ErrSkip
 }
 
-// bind applies the required argument replacements on the query.
-func (s *Stmt) bind(args []driver.Value) error {
-	if len(args) != s.NumInput() {
+// Bind applies the required argument replacements on the query.
+func (s *Stmt) Bind(args []driver.Value) error {
+	if na := s.NumInput(); len(args) < na {
+		// Number of placements to replace exceeds the number of inputs.
 		return ErrQueryBinding
 	}
 	q := s.SrcQuery
-	for _, v := range args {
-		q = strings.Replace(q, "?", fmt.Sprintf("%q", v), 1)
+	for _, rv := range args {
+		var v string
+		switch rv.(type) {
+		case float64:
+			// Decimal point
+			v = fmt.Sprintf("%f", rv)
+		case int64:
+			// Decimal (base 10)
+			v = fmt.Sprintf("%d", rv)
+		case bool:
+			// TRUE or FALSE
+			v = strings.ToUpper(fmt.Sprintf("%t", rv))
+		default:
+			// Double-quoted string safely escaped
+			v = fmt.Sprintf("%q", rv)
+		}
+		q = strings.Replace(q, "?", v, 1)
 	}
 	s.SrcQuery = q
 

@@ -19,6 +19,7 @@ type Driver struct{}
 
 // init adds  awql as sql database driver
 // @see https://github.com/golang/go/wiki/SQLDrivers
+// @implements https://golang.org/src/database/sql/driver/driver.go
 func init() {
 	sql.Register("awql", &Driver{})
 }

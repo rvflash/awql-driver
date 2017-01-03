@@ -7,7 +7,7 @@ AWQL driver for Go's sql package
 
 ### Simple Awql query
  
- ```go
+```go
 // Ignores errors for the demo.
 query := "SELECT ExternalCustomerId, AccountDescriptiveName FROM ACCOUNT_PERFORMANCE_REPORT"
 db, _ := sql.Open("awql", "123-456-7890|dEve1op3er7okeN|ya29.Acc3ss-7ok3n")
@@ -19,8 +19,19 @@ for stmt.Next() {
     fmt.Printf("%v: %v\n", id, name)
     // Output: 1234567890: Rv
 }
- ```
+```
+ 
+### Awql query row with arguments
 
+```go
+// Ignores errors for the demo.
+var name string
+query := "SELECT CampaignName FROM CAMPAIGN_PERFORMANCE_REPORT Where CampaignId = ?"
+row := db.QueryRow(query, 123456789)
+row.Scan(&name)
+fmt.Printf("%v\n", name)
+// Output: Campaign #19
+```
 
 ### Advanced sample
 
