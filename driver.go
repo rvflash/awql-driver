@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	apiVersion = "v201609"
+	ApiVersion = "v201609"
 	dsnSep     = "|"
 	dsnOptSep  = ":"
 )
@@ -168,7 +168,7 @@ type Opts struct {
 // NewOpts returns a Opts with default options.
 func NewOpts(version string) *Opts {
 	if version == "" {
-		version = apiVersion
+		version = ApiVersion
 	}
 	return &Opts{Version: version, SkipReportHeader: true, SkipReportSummary: true}
 }
