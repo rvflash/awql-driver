@@ -7,6 +7,7 @@ import (
 
 var (
 	ErrIntNoData    = errors.New("InternalError.MISSING_DATA_SOURCE")
+	ErrQuery        = errors.New("QueryError.MISSING")
 	ErrQueryBinding = errors.New("QueryError.BINDING_NOT_MATCH")
 	ErrNoNetwork    = errors.New("ConnectionError.NOT_FOUND")
 	ErrBadNetwork   = errors.New("ConnectionError.SERVICE_UNAVAILABLE")
