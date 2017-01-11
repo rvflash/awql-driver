@@ -10,16 +10,21 @@ import (
 func TestAwqlDriver_Open(t *testing.T) {
 	var driverTests = []struct {
 		dsn  string
-		conn *Conn
+		conn driver.Conn
 		err  error
 	}{
-		{"", &Conn{}, driver.ErrBadConn},
-		{"123-456-7890", &Conn{}, driver.ErrBadConn},
-		{"123-456-7890|dEve1op3er7okeN|ya29.AcC3s57okeN|Oops", &Conn{}, driver.ErrBadConn},
-		{"123-456-7890:v201607||ya29.AcC3s57okeN", &Conn{}, ErrDevToken},
-		{"|dEve1op3er7okeN|ya29.AcC3s57okeN", &Conn{}, ErrAdwordsID},
-		{"123-456-7890:v201607|dEve1op3er7okeN|", &Conn{}, ErrBadToken},
-		{"123-456-7890|dEve1op3er7okeN||c1ien753cr37|1/R3Fr35h-70k3n", &Conn{}, ErrBadToken},
+		// Errors.
+		// 0
+		{"", nil, driver.ErrBadConn},
+		{"123-456-7890", nil, driver.ErrBadConn},
+		{"123-456-7890|dEve1op3er7okeN|ya29.AcC3s57okeN|Oops", nil, driver.ErrBadConn},
+		{"123-456-7890:v201607||ya29.AcC3s57okeN", nil, ErrDevToken},
+		{"|dEve1op3er7okeN|ya29.AcC3s57okeN", nil, ErrAdwordsID},
+		// 5
+		{"123-456-7890:v201607|dEve1op3er7okeN|", nil, ErrBadToken},
+		{"123-456-7890|dEve1op3er7okeN||c1ien753cr37|1/R3Fr35h-70k3n", nil, ErrBadToken},
+
+		// Ok.
 		{
 			"123-456-7890|dEve1op3er7okeN",
 			&Conn{adwordsID: "123-456-7890", developerToken: "dEve1op3er7okeN"},
@@ -42,6 +47,7 @@ func TestAwqlDriver_Open(t *testing.T) {
 			},
 			nil,
 		},
+		// 10
 		{
 			"123-456-7890|dEve1op3er7okeN|1234567890-c1i3n7iD.apps.googleusercontent.com|c1ien753cr37|1/R3Fr35h-70k3n",
 			&Conn{
@@ -77,8 +83,8 @@ func TestAwqlDriver_Open(t *testing.T) {
 }
 
 var authTests = []struct {
-	token          *Auth // in
-	str            string    // out
+	token          *Auth  // in
+	str            string // out
 	isValid, isSet bool
 }{
 	{
