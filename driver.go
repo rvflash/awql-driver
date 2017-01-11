@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -27,7 +28,8 @@ func init() {
 // Open returns a new connection to the database.
 // @see AdwordsId[:ApiVersion]|DeveloperToken[|AccessToken]
 // @see AdwordsId[:ApiVersion]|DeveloperToken[|ClientId][|ClientSecret][|RefreshToken]
-// @example 123-456-7890:v201607|dEve1op3er7okeN|1234567890-c1i3n7iD.com|c1ien753cr37|1/R3Fr35h-70k3n
+// @see AdwordsId[:ApiVersion:SupportsZeroImpressions]|DeveloperToken[|ClientId][|ClientSecret][|RefreshToken]
+// @example 123-456-7890:v201607:true|dEve1op3er7okeN|1234567890-c1i3n7iD.com|c1ien753cr37|1/R3Fr35h-70k3n
 func (d *Driver) Open(dsn string) (driver.Conn, error) {
 	conn, err := unmarshal(dsn)
 	if err != nil {
@@ -48,10 +50,17 @@ func unmarshal(dsn string) (*Conn, error) {
 	}
 	var apiVersion = func(s string) string {
 		d := strings.Split(s, dsnOptSep)
-		if len(d) == 2 {
+		if len(d) > 1 {
 			return d[1]
 		}
 		return ""
+	}
+	var useZeroImpressions = func(s string) (ok bool) {
+		d := strings.Split(s, dsnOptSep)
+		if len(d) > 2 {
+			ok, _ = strconv.ParseBool(d[2])
+		}
+		return
 	}
 	conn := &Conn{}
 	if dsn == "" {
@@ -73,7 +82,7 @@ func unmarshal(dsn string) (*Conn, error) {
 	if conn.developerToken == "" {
 		return conn, ErrDevToken
 	}
-	conn.opts = NewOpts(apiVersion(parts[0]))
+	conn.opts = NewOpts(apiVersion(parts[0]), useZeroImpressions(parts[0]))
 
 	var err error
 	switch size {
@@ -166,9 +175,14 @@ type Opts struct {
 }
 
 // NewOpts returns a Opts with default options.
-func NewOpts(version string) *Opts {
+func NewOpts(version string, zero bool) *Opts {
 	if version == "" {
 		version = ApiVersion
 	}
-	return &Opts{Version: version, SkipReportHeader: true, SkipReportSummary: true}
+	return &Opts{
+		IncludeZeroImpressions: zero,
+		SkipReportHeader:       true,
+		SkipReportSummary:      true,
+		Version:                version,
+	}
 }
