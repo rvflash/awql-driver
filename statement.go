@@ -24,13 +24,61 @@ const (
 
 // Stmt is a prepared statement.
 type Stmt struct {
-	Db  *Conn
+	Db       *Conn
 	SrcQuery string
+}
+
+// Bind applies the required argument replacements on the query.
+func (s *Stmt) Bind(args []driver.Value) error {
+	if na := s.NumInput(); len(args) < na {
+		// Number of placements to replace exceeds the number of inputs.
+		return ErrQueryBinding
+	}
+	q := s.SrcQuery
+	for _, rv := range args {
+		var v string
+		switch rv.(type) {
+		case float64:
+			// Decimal point
+			v = fmt.Sprintf("%f", rv)
+		case int64:
+			// Decimal (base 10)
+			v = fmt.Sprintf("%d", rv)
+		case bool:
+			// TRUE or FALSE
+			v = strings.ToUpper(fmt.Sprintf("%t", rv))
+		default:
+			// Double-quoted string safely escaped
+			v = fmt.Sprintf("%q", rv)
+		}
+		q = strings.Replace(q, "?", v, 1)
+	}
+	s.SrcQuery = q
+
+	return nil
 }
 
 // Close closes the statement.
 func (s *Stmt) Close() error {
 	return nil
+}
+
+// Exec executes a query that doesn't return rows, such as an INSERT or UPDATE.
+func (s *Stmt) Exec(args []driver.Value) (driver.Result, error) {
+	return nil, driver.ErrSkip
+}
+
+// Hash returns a hash that represents the statement.
+// Of course, the binding must have already been done to make sense.
+func (s *Stmt) Hash() (string, error) {
+	if s.SrcQuery == "" {
+		return "", ErrQuery
+	}
+	h := fnv.New64()
+	if _, err := h.Write([]byte(s.SrcQuery)); err != nil {
+		return "", err
+	}
+	return strconv.FormatUint(h.Sum64(), 10), nil
 }
 
 // NumInput returns the number of placeholder parameters.
@@ -69,41 +117,6 @@ func (s *Stmt) Query(args []driver.Value) (driver.Rows, error) {
 		return &Rows{Size: uint(l), Data: rs, Position: 1}, nil
 	}
 	return &Rows{}, nil
-}
-
-// Exec executes a query that doesn't return rows, such as an INSERT or UPDATE.
-func (s *Stmt) Exec(args []driver.Value) (driver.Result, error) {
-	return nil, driver.ErrSkip
-}
-
-// Bind applies the required argument replacements on the query.
-func (s *Stmt) Bind(args []driver.Value) error {
-	if na := s.NumInput(); len(args) < na {
-		// Number of placements to replace exceeds the number of inputs.
-		return ErrQueryBinding
-	}
-	q := s.SrcQuery
-	for _, rv := range args {
-		var v string
-		switch rv.(type) {
-		case float64:
-			// Decimal point
-			v = fmt.Sprintf("%f", rv)
-		case int64:
-			// Decimal (base 10)
-			v = fmt.Sprintf("%d", rv)
-		case bool:
-			// TRUE or FALSE
-			v = strings.ToUpper(fmt.Sprintf("%t", rv))
-		default:
-			// Double-quoted string safely escaped
-			v = fmt.Sprintf("%q", rv)
-		}
-		q = strings.Replace(q, "?", v, 1)
-	}
-	s.SrcQuery = q
-
-	return nil
 }
 
 // download calls Adwords API and saves response in a file.
@@ -172,12 +185,11 @@ func (s *Stmt) download(name string) error {
 // filePath returns the file path to save the response of the query.
 // @example /tmp/awql16027257112758723916.csv
 func (s *Stmt) filePath() (string, error) {
-	h := fnv.New64()
-	if _, err := h.Write([]byte(s.SrcQuery)); err != nil {
-		return "", err
+	hash, err := s.Hash()
+	if err != nil {
+		return "", nil
 	}
-	// File name
-	f := []string{"awql", strconv.FormatUint(h.Sum64(), 10), ".", strings.ToLower(apiFmt)}
-	// Complete file path
-	return filepath.Join(os.TempDir(), strings.Join(f, "")), nil
+	path := []string{"awql", hash, ".", strings.ToLower(apiFmt)}
+
+	return filepath.Join(os.TempDir(), strings.Join(path, "")), nil
 }
