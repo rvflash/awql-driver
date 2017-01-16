@@ -11,8 +11,8 @@ import (
 
 const (
 	ApiVersion = "v201609"
-	dsnSep     = "|"
-	dsnOptSep  = ":"
+	DsnSep     = "|"
+	DsnOptSep  = ":"
 )
 
 // Driver implements all methods to pretend as a sql database driver.
@@ -46,17 +46,17 @@ func (d *Driver) Open(dsn string) (driver.Conn, error) {
 // It throws an error on fails to parse it.
 func unmarshal(dsn string) (*Conn, error) {
 	var adwordsId = func(s string) string {
-		return strings.Split(s, dsnOptSep)[0]
+		return strings.Split(s, DsnOptSep)[0]
 	}
 	var apiVersion = func(s string) string {
-		d := strings.Split(s, dsnOptSep)
+		d := strings.Split(s, DsnOptSep)
 		if len(d) > 1 {
 			return d[1]
 		}
 		return ""
 	}
 	var useZeroImpressions = func(s string) (ok bool) {
-		d := strings.Split(s, dsnOptSep)
+		d := strings.Split(s, DsnOptSep)
 		if len(d) > 2 {
 			ok, _ = strconv.ParseBool(d[2])
 		}
@@ -67,7 +67,7 @@ func unmarshal(dsn string) (*Conn, error) {
 		return conn, driver.ErrBadConn
 	}
 
-	parts := strings.Split(dsn, dsnSep)
+	parts := strings.Split(dsn, DsnSep)
 	size := len(parts)
 	if size < 2 || size > 5 || size == 4 {
 		return conn, driver.ErrBadConn
