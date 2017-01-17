@@ -6,7 +6,7 @@ var reportDefinitionErrorTests = []struct {
 	xml []byte // in
 	err string // out
 }{
-	{[]byte(""), ErrIntNoData.Error()},
+	{[]byte(""), ErrNoDsn.Error()},
 	{[]byte(`
 	<reportDownloadError>
 		<ApiError>
