@@ -2,7 +2,6 @@ package awql
 
 import (
 	"encoding/xml"
-	"errors"
 	"strings"
 )
 
@@ -42,16 +41,16 @@ func NewApiError(d []byte) error {
 	if len(d) == 0 {
 		return ErrNoDsn
 	}
-	e := ApiError{}
-	err := xml.Unmarshal(d, &e)
+	e := &ApiError{}
+	err := xml.Unmarshal(d, e)
 	if err != nil {
-		return err
+		e.Type = err.Error()
 	}
-	return errors.New(e.String())
+	return e
 }
 
 // String returns a representation of the api error.
-func (e *ApiError) String() string {
+func (e *ApiError) Error() string {
 	switch e.Field {
 	case "":
 		if e.Trigger == "" || e.Trigger == "<null>" {
