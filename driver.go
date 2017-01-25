@@ -28,7 +28,7 @@ func init() {
 // Open returns a new connection to the database.
 // @see AdwordsId[:ApiVersion]|DeveloperToken[|AccessToken]
 // @see AdwordsId[:ApiVersion]|DeveloperToken[|ClientId][|ClientSecret][|RefreshToken]
-// @see AdwordsId[:ApiVersion:SupportsZeroImpressions]|DeveloperToken[|ClientId][|ClientSecret][|RefreshToken]
+// @see AdwordsId[:ApiVersion:SupportsZeroImpressions:SkipColumnHeader:UseRawEnumValues]|DeveloperToken[|ClientId][|ClientSecret][|RefreshToken]
 // @example 123-456-7890:v201607:true|dEve1op3er7okeN|1234567890-c1i3n7iD.com|c1ien753cr37|1/R3Fr35h-70k3n
 func (d *Driver) Open(dsn string) (driver.Conn, error) {
 	conn, err := unmarshal(dsn)
@@ -48,20 +48,25 @@ func unmarshal(dsn string) (*Conn, error) {
 	var adwordsId = func(s string) string {
 		return strings.Split(s, DsnOptSep)[0]
 	}
-	var apiVersion = func(s string) string {
+	// opts extracts from the dsn all options and returns these.
+	var opts = func(s string) (version string, zero, head, enum bool) {
 		d := strings.Split(s, DsnOptSep)
-		if len(d) > 1 {
-			return d[1]
-		}
-		return ""
-	}
-	var useZeroImpressions = func(s string) (ok bool) {
-		d := strings.Split(s, DsnOptSep)
-		if len(d) > 2 {
-			ok, _ = strconv.ParseBool(d[2])
+		switch len(d) {
+		case 5:
+			enum, _ = strconv.ParseBool(d[4])
+			fallthrough
+		case 4:
+			head, _ = strconv.ParseBool(d[3])
+			fallthrough
+		case 3:
+			zero, _ = strconv.ParseBool(d[2])
+			fallthrough
+		case 2:
+			version = d[1]
 		}
 		return
 	}
+
 	conn := &Conn{}
 	if dsn == "" {
 		return conn, driver.ErrBadConn
@@ -82,7 +87,7 @@ func unmarshal(dsn string) (*Conn, error) {
 	if conn.developerToken == "" {
 		return conn, ErrDevToken
 	}
-	conn.opts = NewOpts(apiVersion(parts[0]), useZeroImpressions(parts[0]))
+	conn.opts = NewOpts(opts(parts[0]))
 
 	var err error
 	switch size {
@@ -175,14 +180,16 @@ type Opts struct {
 }
 
 // NewOpts returns a Opts with default options.
-func NewOpts(version string, zero bool) *Opts {
+func NewOpts(version string, zero, head, enum bool) *Opts {
 	if version == "" {
 		version = ApiVersion
 	}
 	return &Opts{
 		IncludeZeroImpressions: zero,
+		SkipColumnHeader:       head,
 		SkipReportHeader:       true,
 		SkipReportSummary:      true,
+		UseRawEnumValues:       enum,
 		Version:                version,
 	}
 }
