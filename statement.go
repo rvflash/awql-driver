@@ -112,9 +112,13 @@ func (s *Stmt) Query(args []driver.Value) (driver.Rows, error) {
 	if err != nil {
 		return nil, err
 	}
-	if l := len(rs); l > 1 {
-		// Starts the index to 1 in order to ignore the column header.
-		return &Rows{Size: uint(l), Data: rs, Position: 1}, nil
+	// Starts the index to 1 in order to ignore the column header.
+	var offset int
+	if !s.Db.opts.SkipColumnHeader {
+		offset = 1
+	}
+	if l := len(rs); l > offset {
+		return &Rows{Size: l, Data: rs, Position: offset}, nil
 	}
 	return &Rows{}, nil
 }
