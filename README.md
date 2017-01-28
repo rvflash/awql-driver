@@ -6,7 +6,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/rvflash/awql-driver)](https://goreportcard.com/report/github.com/rvflash/awql-driver)
 
 
-AWQL driver for Go's sql package
+AWQL driver for Go's sql package.
 
 ## Examples
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Error messages.
 var (
 	ErrQuery        = NewQueryError("missing")
 	ErrQueryBinding = NewQueryError("binding not match")
@@ -16,6 +17,9 @@ var (
 	ErrDevToken     = NewConnectionError("developer token")
 )
 
+// ApiError represents a Google Report Download Error.
+// It voluntary ignores trigger field.
+//
 // In case of error, Google Adwords API provides more information in a XML response
 // @example
 // <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -26,9 +30,6 @@ var (
 // 		<fieldPath>selector</fieldPath>
 // 	</ApiError>
 // </reportDownloadError>
-//
-// ApiError represents a Google Report Download Error.
-// Voluntary ignores trigger field.
 type ApiError struct {
 	Type    string `xml:"ApiError>type"`
 	Trigger string `xml:"ApiError>trigger"`
