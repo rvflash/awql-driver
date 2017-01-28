@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Data source name.
 const (
 	ApiVersion = "v201609"
 	DsnSep     = "|"

@@ -1,7 +1,12 @@
 # Awql Database Driver
 
-AWQL driver for Go's sql package
+[![GoDoc](https://godoc.org/github.com/rvflash/awql-driver?status.svg)](https://godoc.org/github.com/rvflash/awql-driver)
+[![Build Status](https://img.shields.io/travis/rvflash/awql-driver.svg)](https://travis-ci.org/rvflash/awql-driver)
+[![Code Coverage](https://img.shields.io/codecov/c/github/rvflash/awql-driver.svg)](http://codecov.io/github/rvflash/awql-driver?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/rvflash/awql-driver)](https://goreportcard.com/report/github.com/rvflash/awql-driver)
 
+
+AWQL driver for Go's sql package.
 
 ## Examples
 
