@@ -9,43 +9,43 @@ var reportDefinitionErrorTests = []struct {
 	{[]byte(""), ErrNoDsn.Error()},
 	{[]byte(`
 	<reportDownloadError>
-		<ApiError>
+		<APIError>
 			<type>ReportDefinitionError.CUSTOMER_SERVING_TYPE_REPORT_MISMATCH</type>
 			<trigger></trigger>
 			<fieldPath>selector</fieldPath>
-		</ApiError>
+		</APIError>
 	</reportDownloadError>`), "ReportDefinitionError.CUSTOMER_SERVING_TYPE_REPORT_MISMATCH"},
 	{[]byte(`
 	<reportDownloadError>
-		<ApiError>
+		<APIError>
 			<type>ReportDownloadError.ERROR_GETTING_RESPONSE_FROM_BACKEND</type>
 			<trigger>Unable to read report data</trigger>
 			<fieldPath></fieldPath>
-		</ApiError>
+		</APIError>
 	</reportDownloadError>`), "ReportDownloadError.ERROR_GETTING_RESPONSE_FROM_BACKEND (Unable to read report data)"},
 	{[]byte(`
 	<reportDownloadError>
-		<ApiError>
+		<APIError>
 			<type>QueryError.DATE_COLUMN_REQUIRES_DURING_CLAUSE</type>
 			<trigger></trigger>
 			<fieldPath></fieldPath>
-		</ApiError>
+		</APIError>
 	</reportDownloadError>`), "QueryError.DATE_COLUMN_REQUIRES_DURING_CLAUSE"},
 	{[]byte(`
 	<reportDownloadError>
-		<ApiError>
+		<APIError>
 			<type>ReportDefinitionError.INVALID_FIELD_NAME_FOR_REPORT</type>
 			<trigger></trigger>
 			<fieldPath>CampaignId</fieldPath>
-		</ApiError>
+		</APIError>
 	</reportDownloadError>`), "ReportDefinitionError.INVALID_FIELD_NAME_FOR_REPORT on CampaignId"},
 	{[]byte(`Not a XML`), "EOF"},
 }
 
-// TestNewApiError tests the method named NewApiError.
+// TestNewApiError tests the method named NewAPIError.
 func TestNewApiError(t *testing.T) {
 	for _, e := range reportDefinitionErrorTests {
-		if err := NewApiError(e.xml); err != nil {
+		if err := NewAPIError(e.xml); err != nil {
 			if err.Error() != e.err {
 				t.Errorf("Expected the error message %v with %s, received %v", e.err, e.xml, err)
 			}
