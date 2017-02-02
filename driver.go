@@ -11,7 +11,7 @@ import (
 
 // Data source name.
 const (
-	ApiVersion = "v201609"
+	APIVersion = "v201609"
 	DsnSep     = "|"
 	DsnOptSep  = ":"
 )
@@ -27,10 +27,8 @@ func init() {
 }
 
 // Open returns a new connection to the database.
-// @see AdwordsId[:ApiVersion]|DeveloperToken[|AccessToken]
-// @see AdwordsId[:ApiVersion]|DeveloperToken[|ClientId][|ClientSecret][|RefreshToken]
-// @see AdwordsId[:ApiVersion:SupportsZeroImpressions:SkipColumnHeader:UseRawEnumValues]|DeveloperToken[|ClientId][|ClientSecret][|RefreshToken]
-// @example 123-456-7890:v201607:true|dEve1op3er7okeN|1234567890-c1i3n7iD.com|c1ien753cr37|1/R3Fr35h-70k3n
+// @see https://github.com/rvflash/awql-driver#data-source-name for how
+// the DSN string is formatted
 func (d *Driver) Open(dsn string) (driver.Conn, error) {
 	conn, err := unmarshal(dsn)
 	if err != nil {
@@ -46,7 +44,7 @@ func (d *Driver) Open(dsn string) (driver.Conn, error) {
 // parseDsn returns an pointer to an Conn by parsing a DSN string.
 // It throws an error on fails to parse it.
 func unmarshal(dsn string) (*Conn, error) {
-	var adwordsId = func(s string) string {
+	var adwordsID = func(s string) string {
 		return strings.Split(s, DsnOptSep)[0]
 	}
 	// opts extracts from the dsn all options and returns these.
@@ -80,7 +78,7 @@ func unmarshal(dsn string) (*Conn, error) {
 	}
 	// @example 123-456-7890|dEve1op3er7okeN
 	conn.client = http.DefaultClient
-	conn.adwordsID = adwordsId(parts[0])
+	conn.adwordsID = adwordsID(parts[0])
 	if conn.adwordsID == "" {
 		return conn, ErrAdwordsID
 	}
@@ -111,7 +109,7 @@ type AuthToken struct {
 
 // AuthKey represents the keys used to retrieve an access token.
 type AuthKey struct {
-	ClientId,
+	ClientID,
 	ClientSecret,
 	RefreshToken string
 }
@@ -125,7 +123,7 @@ type Auth struct {
 
 // IsSet returns true if the auth struct has keys to refresh access token.
 func (a *Auth) IsSet() bool {
-	return a.ClientId != ""
+	return a.ClientID != ""
 }
 
 // String returns a representation of the access token.
@@ -157,13 +155,13 @@ func NewAuthByToken(tk string) (*Auth, error) {
 }
 
 // NewAuthByClient returns an Auth struct only based on the client keys.
-func NewAuthByClient(clientId, clientSecret, refreshToken string) (*Auth, error) {
-	if clientId == "" || clientSecret == "" || refreshToken == "" {
+func NewAuthByClient(clientID, clientSecret, refreshToken string) (*Auth, error) {
+	if clientID == "" || clientSecret == "" || refreshToken == "" {
 		return &Auth{}, ErrBadToken
 	}
 	return &Auth{
 		AuthKey: AuthKey{
-			ClientId:     clientId,
+			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			RefreshToken: refreshToken,
 		},
@@ -183,7 +181,7 @@ type Opts struct {
 // NewOpts returns a Opts with default options.
 func NewOpts(version string, zero, head, enum bool) *Opts {
 	if version == "" {
-		version = ApiVersion
+		version = APIVersion
 	}
 	return &Opts{
 		IncludeZeroImpressions: zero,
