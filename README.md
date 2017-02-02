@@ -35,11 +35,11 @@ db, err := sql.Open("awql", "AdwordsID:APIVersion|DeveloperToken|AccessToken")
 
 The Data Source Name has two common formats, the optional parts are marked by squared brackets:
 
-### `Minimal`
+#### `Minimal`
 ```
 AdwordsID|DeveloperToken[|AccessToken]
 ```
-### `OAuth credentials`
+#### `OAuth credentials`
 ```
 AdwordsID|DeveloperToken[|ClientID|ClientSecret|RefreshToken]
 ```
