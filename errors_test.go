@@ -54,3 +54,11 @@ func TestNewApiError(t *testing.T) {
 		}
 	}
 }
+
+// TestNewQueryError tests the method named NewQueryError.
+func TestNewQueryError(t *testing.T) {
+	err := NewQueryError("hello word")
+	if err.Error() != "QueryError.HELLO_WORD" {
+		t.Fatalf("Unexpected error message: %v", err.Error())
+	}
+}

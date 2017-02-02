@@ -38,10 +38,10 @@ func (s *Stmt) Bind(args []driver.Value) error {
 	for _, rv := range args {
 		var v string
 		switch rv.(type) {
-		case float64:
+		case float64, float32:
 			// Decimal point
 			v = fmt.Sprintf("%f", rv)
-		case int64:
+		case int64, int:
 			// Decimal (base 10)
 			v = fmt.Sprintf("%d", rv)
 		case bool:
@@ -75,7 +75,7 @@ func (s *Stmt) Hash() (string, error) {
 		return "", ErrQuery
 	}
 	h := fnv.New64()
-	if _, err := h.Write([]byte(s.SrcQuery)); err != nil {
+	if _, err := h.Write([]byte(strings.ToLower(s.SrcQuery))); err != nil {
 		return "", err
 	}
 	return strconv.FormatUint(h.Sum64(), 10), nil
