@@ -21,13 +21,15 @@ var (
 // It voluntary ignores trigger field.
 //
 // In case of error, Google Adwords API provides more information in a XML response:
-// <reportDownloadError>
-// <ApiError>
-// 	   <type>ReportDefinitionError.CUSTOMER_SERVING_TYPE_REPORT_MISMATCH</type>
-// 	   <trigger></trigger>
-//     <fieldPath>selector</fieldPath>
-// </ApiError>
-// </reportDownloadError>
+//
+// 	<reportDownloadError>
+// 		<ApiError>
+//			<type>ReportDefinitionError.CUSTOMER_SERVING_TYPE_REPORT_MISMATCH</type>
+//			<trigger></trigger>
+//			<fieldPath>selector</fieldPath>
+// 		</ApiError>
+//	</reportDownloadError>
+//
 type APIError struct {
 	Type    string `xml:"ApiError>type"`
 	Trigger string `xml:"ApiError>trigger"`
