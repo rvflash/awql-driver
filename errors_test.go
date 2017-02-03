@@ -9,35 +9,35 @@ var reportDefinitionErrorTests = []struct {
 	{[]byte(""), ErrNoDsn.Error()},
 	{[]byte(`
 	<reportDownloadError>
-		<APIError>
+		<ApiError>
 			<type>ReportDefinitionError.CUSTOMER_SERVING_TYPE_REPORT_MISMATCH</type>
 			<trigger></trigger>
 			<fieldPath>selector</fieldPath>
-		</APIError>
+		</ApiError>
 	</reportDownloadError>`), "ReportDefinitionError.CUSTOMER_SERVING_TYPE_REPORT_MISMATCH"},
 	{[]byte(`
 	<reportDownloadError>
-		<APIError>
+		<ApiError>
 			<type>ReportDownloadError.ERROR_GETTING_RESPONSE_FROM_BACKEND</type>
 			<trigger>Unable to read report data</trigger>
 			<fieldPath></fieldPath>
-		</APIError>
+		</ApiError>
 	</reportDownloadError>`), "ReportDownloadError.ERROR_GETTING_RESPONSE_FROM_BACKEND (Unable to read report data)"},
 	{[]byte(`
 	<reportDownloadError>
-		<APIError>
+		<ApiError>
 			<type>QueryError.DATE_COLUMN_REQUIRES_DURING_CLAUSE</type>
 			<trigger></trigger>
 			<fieldPath></fieldPath>
-		</APIError>
+		</ApiError>
 	</reportDownloadError>`), "QueryError.DATE_COLUMN_REQUIRES_DURING_CLAUSE"},
 	{[]byte(`
 	<reportDownloadError>
-		<APIError>
+		<ApiError>
 			<type>ReportDefinitionError.INVALID_FIELD_NAME_FOR_REPORT</type>
 			<trigger></trigger>
 			<fieldPath>CampaignId</fieldPath>
-		</APIError>
+		</ApiError>
 	</reportDownloadError>`), "ReportDefinitionError.INVALID_FIELD_NAME_FOR_REPORT on CampaignId"},
 	{[]byte(`Not a XML`), "EOF"},
 }

@@ -20,20 +20,18 @@ var (
 // APIError represents a Google Report Download Error.
 // It voluntary ignores trigger field.
 //
-// In case of error, Google Adwords API provides more information in a XML response
-// @example
-// <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+// In case of error, Google Adwords API provides more information in a XML response:
 // <reportDownloadError>
-// 	<APIError>
-// 		<type>ReportDefinitionError.CUSTOMER_SERVING_TYPE_REPORT_MISMATCH</type>
-// 		<trigger></trigger>
-// 		<fieldPath>selector</fieldPath>
-// 	</APIError>
+// <ApiError>
+// 	   <type>ReportDefinitionError.CUSTOMER_SERVING_TYPE_REPORT_MISMATCH</type>
+// 	   <trigger></trigger>
+//     <fieldPath>selector</fieldPath>
+// </ApiError>
 // </reportDownloadError>
 type APIError struct {
-	Type    string `xml:"APIError>type"`
-	Trigger string `xml:"APIError>trigger"`
-	Field   string `xml:"APIError>fieldPath"`
+	Type    string `xml:"ApiError>type"`
+	Trigger string `xml:"ApiError>trigger"`
+	Field   string `xml:"ApiError>fieldPath"`
 }
 
 // NewAPIError parses a XML document that represents a download report error.
