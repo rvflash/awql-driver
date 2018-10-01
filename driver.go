@@ -36,9 +36,9 @@ func (d *Driver) Open(dsn string) (driver.Conn, error) {
 	}
 	if conn.oAuth != nil {
 		// An authentication is required to connect to Adwords API.
-		conn.authenticate()
+		err = conn.authenticate()
 	}
-	return conn, nil
+	return conn, err
 }
 
 // parseDsn returns an pointer to an Conn by parsing a DSN string.

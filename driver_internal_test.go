@@ -64,20 +64,20 @@ func TestAwqlDriver_Open(t *testing.T) {
 					},
 				},
 			},
-			nil,
+			ErrBadNetwork,
 		},
 	}
 
 	d := &Driver{}
-	for _, dt := range driverTests {
+	for i, dt := range driverTests {
 		if _, err := d.Open(dt.dsn); err == nil {
 			if dt.err != nil {
-				t.Errorf("Expected error %v, received no error with %v", dt.err, dt.dsn)
+				t.Errorf("%d. Expected error %v, received no error with %v", i, dt.err, dt.dsn)
 			}
 		} else if dt.err == nil {
-			t.Errorf("Expected no error with %s, received %v", dt.dsn, err)
+			t.Errorf("%d. Expected no error with %s, received %v", i, dt.dsn, err)
 		} else if err.Error() != dt.err.Error() {
-			t.Errorf("Expected error %v with %s, received %v", dt.err, dt.dsn, err)
+			t.Errorf("%d. Expected error %v with %s, received %v", i, dt.err, dt.dsn, err)
 		}
 	}
 }
@@ -124,7 +124,10 @@ var authTests = []struct {
 func TestAwqlAuth_IsSet(t *testing.T) {
 	for _, a := range authTests {
 		if a.token.IsSet() != a.isSet {
-			t.Errorf("Expected %v for the check of setting of the access token %v, received %v", a.isSet, a.token, a.token.IsSet())
+			t.Errorf(
+				"Expected %v for the check of setting of the access token %v, received %v",
+				a.isSet, a.token, a.token.IsSet(),
+			)
 		}
 	}
 }

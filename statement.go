@@ -19,7 +19,7 @@ import (
 const (
 	apiURL     = "https://adwords.google.com/api/adwords/reportdownload/"
 	apiFmt     = "CSV"
-	apiTimeout = time.Duration(10 * time.Minute)
+	apiTimeout = 10 * time.Minute
 )
 
 // Stmt is a prepared statement.
@@ -189,7 +189,7 @@ func (s *Stmt) download(name string) error {
 func (s *Stmt) filePath() (string, error) {
 	hash, err := s.Hash()
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	path := []string{"awql", hash, ".", strings.ToLower(apiFmt)}
 

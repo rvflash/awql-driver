@@ -12,7 +12,7 @@ import (
 
 const (
 	tokenURL            = "https://accounts.google.com/o/oauth2/token"
-	tokenTimeout        = time.Duration(4 * time.Second)
+	tokenTimeout        = 4 * time.Second
 	tokenExpiryDelta    = 10 * time.Second
 	tokenExpiryDuration = 60 * time.Minute
 )
